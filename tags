@@ -1,0 +1,136 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+AWK	Makefile	/^AWK	= awk$/;"	m
+BINEXT	Makefile	/^BINEXT	= .exe$/;"	m
+CC	Makefile	/^CC	= $(CROSSPREFIX)gcc$/;"	m
+CFLAGS	Makefile	/^CFLAGS	= -O2 -W -Wall$/;"	m
+DL	Makefile	/^DL	= '$/;"	m
+FDESCR	Makefile	/^FDESCR	= Flashtool for RK2808, RK2818, RK2918, RK3066, RK3068 and RK3188 based tablets$/;"	m
+GET32LE	rkunpack.c	70;"	d	file:
+LCOPYR	Makefile	/^LCOPYR	= 2010-2013 Ivo van Poorten, Fukaumi Naoki, Guenter Knauf, Ulrich Prinz, Steve Wilson$/;"	m
+LD	Makefile	/^LD	= $(CC)$/;"	m
+LDFLAGS	Makefile	/^LDFLAGS	= -s$/;"	m
+LDFLAGS	Makefile	/^LDFLAGS =$/;"	m
+LIBS	Makefile	/^LIBS	= -lusb-1.0$/;"	m
+MACH	Makefile	/^MACH	= $(shell $(CC) -dumpmachine)$/;"	m
+MAX_NAND_ID	rkflashtool.c	136;"	d	file:
+MAX_PARAM_LENGTH	rkflashtool.c	52;"	d	file:
+NEXT	rkflashtool.c	236;"	d	file:
+O_BINARY	rkcrc.c	41;"	d	file:
+O_BINARY	rkunpack.c	48;"	d	file:
+PROGS	Makefile	/^PROGS	= $(patsubst %.c,%$(BINEXT), $(wildcard *.c))$/;"	m
+PUT32LE	rkflashtool.h	1;"	d
+RC	Makefile	/^RC	= $(CROSSPREFIX)windres$/;"	m
+RCFLAGS	Makefile	/^RCFLAGS	= -O coff -i$/;"	m
+RESFILE	Makefile	/^RESFILE	= %.res$/;"	m
+RKFLASHTOOL_VERSION_H	version.h	2;"	d
+RKFLASHTOOL_VERSION_MAJOR	version.h	3;"	d
+RKFLASHTOOL_VERSION_MINOR	version.h	4;"	d
+RKFT_BLOCKSIZE	rkflashtool.c	47;"	d	file:
+RKFT_CMD_ERASESECTORS	rkflashtool.c	73;"	d	file:
+RKFT_CMD_ERASESYSTEMDISK	rkflashtool.c	62;"	d	file:
+RKFT_CMD_EXECUTESDRAM	rkflashtool.c	77;"	d	file:
+RKFT_CMD_LOWERFORMAT	rkflashtool.c	84;"	d	file:
+RKFT_CMD_READCHIPINFO	rkflashtool.c	58;"	d	file:
+RKFT_CMD_READEFUSE	rkflashtool.c	59;"	d	file:
+RKFT_CMD_READFLASHID	rkflashtool.c	56;"	d	file:
+RKFT_CMD_READFLASHINFO	rkflashtool.c	57;"	d	file:
+RKFT_CMD_READLBA	rkflashtool.c	68;"	d	file:
+RKFT_CMD_READSDRAM	rkflashtool.c	69;"	d	file:
+RKFT_CMD_READSECTOR	rkflashtool.c	67;"	d	file:
+RKFT_CMD_READSPARE	rkflashtool.c	82;"	d	file:
+RKFT_CMD_RESETDEVICE	rkflashtool.c	64;"	d	file:
+RKFT_CMD_SETDEVICEINFO	rkflashtool.c	61;"	d	file:
+RKFT_CMD_SETRESETFLASG	rkflashtool.c	63;"	d	file:
+RKFT_CMD_TESTBADBLOCK	rkflashtool.c	66;"	d	file:
+RKFT_CMD_TESTUNITREADY	rkflashtool.c	55;"	d	file:
+RKFT_CMD_UNKNOWN1	rkflashtool.c	70;"	d	file:
+RKFT_CMD_UNKNOWN2	rkflashtool.c	74;"	d	file:
+RKFT_CMD_UNKNOWN3	rkflashtool.c	79;"	d	file:
+RKFT_CMD_WRITEEFUSE	rkflashtool.c	78;"	d	file:
+RKFT_CMD_WRITELBA	rkflashtool.c	75;"	d	file:
+RKFT_CMD_WRITENKB	rkflashtool.c	85;"	d	file:
+RKFT_CMD_WRITESDRAM	rkflashtool.c	76;"	d	file:
+RKFT_CMD_WRITESECTOR	rkflashtool.c	72;"	d	file:
+RKFT_CMD_WRITESPARE	rkflashtool.c	81;"	d	file:
+RKFT_IDB_BLOCKSIZE	rkflashtool.c	48;"	d	file:
+RKFT_IDB_INCR	rkflashtool.c	49;"	d	file:
+RKFT_MEM_INCR	rkflashtool.c	50;"	d	file:
+RKFT_OFF_INCR	rkflashtool.c	51;"	d	file:
+SDRAM_BASE_ADDRESS	rkflashtool.c	53;"	d	file:
+SETBE16	rkflashtool.c	87;"	d	file:
+SETBE32	rkflashtool.c	92;"	d	file:
+USE_RES	Makefile	/^USE_RES	= 1$/;"	m
+VERMAJ	Makefile	/^VERMAJ	= $(shell $(AWK) '\/define.*RKFLASHTOOL_VERSION_MAJOR\/{print $$3}' version.h)$/;"	m
+VERMIN	Makefile	/^VERMIN	= $(shell $(AWK) '\/define.*RKFLASHTOOL_VERSION_MINOR\/{print $$3}' version.h)$/;"	m
+VERREV	Makefile	/^VERREV	= 0$/;"	m
+WWWURL	Makefile	/^WWWURL	= http:\/\/sourceforge.net\/projects\/rkflashtool\/$/;"	m
+_CRT_fmode	rkflashtool.c	/^int _CRT_fmode = _O_BINARY;$/;"	v
+_RKCRC_H_	rkcrc.h	27;"	d
+access_time	rkflashtool.c	/^    uint8_t access_time;$/;"	m	struct:__anon1	file:
+block_size	rkflashtool.c	/^    uint16_t block_size;$/;"	m	struct:__anon1	file:
+bootrom	bootrom.h	/^unsigned char bootrom[] = {$/;"	v
+buf	rkflashtool.c	/^static uint8_t cmd[31], res[13], buf[RKFT_BLOCKSIZE];$/;"	v	file:
+buf	rkunpack.c	/^static uint8_t *buf;$/;"	v	file:
+c	rkflashtool.c	/^static libusb_context *c;$/;"	v	file:
+chip_select	rkflashtool.c	/^    uint8_t chip_select;$/;"	m	struct:__anon1	file:
+cmd	rkflashtool.c	/^static uint8_t cmd[31], res[13], buf[RKFT_BLOCKSIZE];$/;"	v	file:
+crc16table	rkcrc.h	/^static uint16_t crc16table[] = {$/;"	v
+crc32table	rkcrc.h	/^static uint32_t crc32table[] = {$/;"	v
+data	rom.h	/^unsigned int data[] = {$/;"	v
+ecc_bits	rkflashtool.c	/^    uint8_t ecc_bits;$/;"	m	struct:__anon1	file:
+fatal	rkcrc.c	58;"	d	file:
+fatal	rkflashtool.c	156;"	d	file:
+fatal	rkunpack.c	68;"	d	file:
+fd	rkunpack.c	/^static int fd;$/;"	v	file:
+flash_size	rkflashtool.c	/^    uint32_t flash_size;$/;"	m	struct:__anon1	file:
+fm	rkunpack.c	/^HANDLE fm;$/;"	v
+fsize	rkunpack.c	/^static unsigned int fsize, ioff, isize, noff;$/;"	v	file:
+h	rkflashtool.c	/^static libusb_device_handle *h = NULL;$/;"	v	file:
+headers	rkcrc.c	/^static const char headers[2][4] = { "KRNL", "PARM" };$/;"	v	file:
+info	rkcrc.c	57;"	d	file:
+info	rkflashtool.c	154;"	d	file:
+info	rkunpack.c	67;"	d	file:
+info_and_fatal	rkcrc.c	/^static void info_and_fatal(const int s, char *f, ...) {$/;"	f	file:
+info_and_fatal	rkflashtool.c	/^static void info_and_fatal(const int s, const int cr, char *f, ...) {$/;"	f	file:
+info_and_fatal	rkunpack.c	/^static void info_and_fatal(const int s, const char *f, ...) {$/;"	f	file:
+infocr	rkflashtool.c	155;"	d	file:
+ioff	rkunpack.c	/^static unsigned int fsize, ioff, isize, noff;$/;"	v	file:
+isize	rkunpack.c	/^static unsigned int fsize, ioff, isize, noff;$/;"	v	file:
+main	convert.c	/^int main()$/;"	f
+main	rkcrc.c	/^int main(int argc, char *argv[]) {$/;"	f
+main	rkflashtool.c	/^int main(int argc, char **argv) {$/;"	f
+main	rkunpack.c	/^int main(int argc, char *argv[]) {$/;"	f
+manufacturer	rkflashtool.c	/^static const char* const manufacturer[] = {   \/* NAND Manufacturers *\/$/;"	v	file:
+manufacturer_id	rkflashtool.c	/^    uint8_t manufacturer_id;$/;"	m	struct:__anon1	file:
+mkdir	rkunpack.c	42;"	d	file:
+mkdir	rkunpack.c	43;"	d	file:
+name	rkflashtool.c	/^    const char name[8];$/;"	m	struct:t_pid	file:
+nand_info	rkflashtool.c	/^} nand_info;$/;"	t	typeref:struct:__anon1	file:
+noff	rkunpack.c	/^static unsigned int fsize, ioff, isize, noff;$/;"	v	file:
+page_size	rkflashtool.c	/^    uint8_t page_size;$/;"	m	struct:__anon1	file:
+pid	rkflashtool.c	/^    const uint16_t pid;$/;"	m	struct:t_pid	file:
+pidtab	rkflashtool.c	/^} pidtab[] = {$/;"	v	typeref:struct:t_pid	file:
+recv_buf	rkflashtool.c	/^static void recv_buf(unsigned int s) {$/;"	f	file:
+recv_res	rkflashtool.c	/^static void recv_res(void) {$/;"	f	file:
+res	rkflashtool.c	/^static uint8_t cmd[31], res[13], buf[RKFT_BLOCKSIZE];$/;"	v	file:
+rkcrc16	rkcrc.h	/^rkcrc16(uint16_t crc, uint8_t *buf, uint64_t size)$/;"	f
+rkcrc32	rkcrc.h	/^rkcrc32(uint32_t crc, uint8_t *buf, uint64_t size)$/;"	f
+send_buf	rkflashtool.c	/^static void send_buf(unsigned int s) {$/;"	f	file:
+send_cmd	rkflashtool.c	/^static void send_cmd(uint32_t command, uint32_t offset, uint16_t nsectors) {$/;"	f	file:
+send_exec	rkflashtool.c	/^static void send_exec(uint32_t krnl_addr, uint32_t parm_addr) {$/;"	f	file:
+send_reset	rkflashtool.c	/^static void send_reset(uint8_t flag) {$/;"	f	file:
+size	rkunpack.c	/^static off_t size;$/;"	v	file:
+strings	rkcrc.c	/^static const char *const strings[2] = { "info", "fatal" };$/;"	v	file:
+strings	rkflashtool.c	/^static const char *const strings[2] = { "info", "fatal" };$/;"	v	file:
+strings	rkunpack.c	/^static const char *const strings[2] = { "info", "fatal" };$/;"	v	file:
+t_pid	rkflashtool.c	/^static const struct t_pid {$/;"	s	file:
+tmp	rkflashtool.c	/^static int tmp;$/;"	v	file:
+unpack_rkaf	rkunpack.c	/^static void unpack_rkaf(void) {$/;"	f	file:
+unpack_rkfw	rkunpack.c	/^static void unpack_rkfw(void) {$/;"	f	file:
+usage	rkflashtool.c	/^static void usage(void) {$/;"	f	file:
+write_file	rkunpack.c	/^static void write_file(const char *path, uint8_t *buffer, unsigned int length) {$/;"	f	file:

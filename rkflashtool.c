@@ -458,6 +458,7 @@ action:
     switch(action) {
     case 'b':   /* Reboot device */
         info("rebooting device...\n");
+		printf("flag: %d\n", flag);
         send_reset(flag);
         recv_res();
         break;
@@ -598,6 +599,23 @@ action:
         recv_res();
         break;
     case 'i':   /* Read IDB */
+        while (size > 0) {
+            int sizeRead = size > RKFT_IDB_INCR ? RKFT_IDB_INCR : size;
+            infocr("reading IDB flash memory at offset 0x%08x", offset);
+
+            send_cmd(RKFT_CMD_READSECTOR, offset, sizeRead);
+            recv_buf(RKFT_IDB_BLOCKSIZE * sizeRead);
+            recv_res();
+
+            if (write(1, buf, RKFT_IDB_BLOCKSIZE * sizeRead) <= 0)
+                fatal("Write error! Disk full?\n");
+
+            offset += sizeRead;
+            size -= sizeRead;
+        }
+        fprintf(stderr, "... Done!\n");
+        break;
+    case '1':   /* Read IDB */
         while (size > 0) {
             int sizeRead = size > RKFT_IDB_INCR ? RKFT_IDB_INCR : size;
             infocr("reading IDB flash memory at offset 0x%08x", offset);

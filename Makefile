@@ -2,9 +2,9 @@
 
 CC	= $(CROSSPREFIX)gcc
 LD	= $(CC)
-CFLAGS	= -O2 -W -Wall
-LDFLAGS	= -s
-LIBS	= -lusb-1.0
+CFLAGS	= -O2 -g
+LDFLAGS	= 
+LIBS	= `pkg-config --cflags --libs libusb-1.0` -lpthread
 
 ifdef LIBUSB
 CFLAGS	+= -I$(LIBUSB)/include
