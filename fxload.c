@@ -82,66 +82,15 @@ static int cmd_count = 0;
 static int ddr_fd, usb_fd;
 static int sector;
 static uint16_t crc16;
-
-struct init_seq {
-	char cmd[31];
-	int flag;
-};
-
-static struct init_seq seq[31] = {
-	{
-		{
-			0x55,0x53,0x42,0x43,0xcf,0x31,0x90,0x00,0x00,0x00,0x00,0x00,0x80,0x00,0x06,0x00,
-			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-		},
-		0
-	},
-
-	{
-		{
-			0x55,0x53,0x42,0x43,0xe5,0x59,0x7a,0x95,0x00,0x00,0x00,0x00,0x80,0x00,0x06,0x1b,
-			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-		},
-		16
-	},
-	{
-		{
-			0x55,0x53,0x42,0x43,0xdb,0x2c,0xbf,0xd2,0x00,0x00,0x00,0x00,0x80,0x00,0x06,0x1a,
-			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-		},
-		11
-	},
-	{
-		{
-			0x55,0x53,0x42,0x43,0x03,0x4d,0x83,0xb5,0x00,0x00,0x00,0x00,0x80,0x00,0x06,0x01,
-			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-		},
-		5
-	},
-	{
-		{
-			0x55,0x53,0x42,0x43,0x2a,0x25,0x5d,0x17,0x00,0x00,0x00,0x00,0x80,0x00,0x0a,0x03,
-			0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-		},
-		64
-	},
-	{
-		{
-			0x55,0x53,0x42,0x43,0x01,0x1e,0x72,0xfd,0x00,0x00,0x00,0x00,0x80,0x00,0x0a,0x04,
-			0x00,0x00,0x00,0x20,0x00,0x00,0x00,0x04,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-		},
-		2112
-	},
-	{
-		{
-			0x55,0x53,0x42,0x43,0x8b,0x17,0x6a,0x6a,0x00,0x00,0x00,0x00,0x00,0x00,0x06,0xff,
-			0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-		},
-		0
-	}
-};
-
 static int load_state = 0;
+
+static void LIBUSB_CALL cmd_cb(struct libusb_transfer *xfr);
+static void LIBUSB_CALL res_cb(struct libusb_transfer *xfr);
+int stage1(struct libusb_device_handle **handle, struct libusb_device *dev);
+int stage2(struct libusb_device_handle **handle, struct libusb_device *dev);
+int hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev,
+		libusb_hotplug_event event, void *user_data);
+static void LIBUSB_CALL dram_cb(struct libusb_transfer *xfr);
 
 static void prepare_cmd(uint32_t command, uint32_t offset, uint16_t nsectors)
 {
@@ -163,9 +112,48 @@ static void prepare_cmd(uint32_t command, uint32_t offset, uint16_t nsectors)
 	printf("\n");
 }
 
+static void LIBUSB_CALL dram_cmd_cb(struct libusb_transfer *xfr)
+{
+	if (xfr->status != LIBUSB_TRANSFER_COMPLETED) {
+		fprintf(stderr, "res_cb, transfer status %d\n", xfr->status);
+		libusb_free_transfer(xfr);
+		exit(3);
+	}
 
-static void LIBUSB_CALL cmd_cb(struct libusb_transfer *xfr);
-static void LIBUSB_CALL res_cb(struct libusb_transfer *xfr);
+	printf("%d transfered\n", xfr->actual_length);
+
+	sector += 0x10;
+	if (sector == 0x20f0 + 0x10)
+		sector = 0x3000;
+	prepare_cmd(RKFT_CMD_WRITESECTOR, sector, 0x10);
+
+	printf("write sector cmd: 0x%04x\n", sector);
+	libusb_fill_bulk_transfer(xfr, xfr->dev_handle, 0x02, cmd, 31, dram_cb, NULL, 60*1000);
+	libusb_submit_transfer(xfr);
+}
+
+static void LIBUSB_CALL dram_cb(struct libusb_transfer *xfr)
+{
+	if (xfr->status != LIBUSB_TRANSFER_COMPLETED) {
+		fprintf(stderr, "res_cb, transfer status %d\n", xfr->status);
+		libusb_free_transfer(xfr);
+		exit(3);
+	}
+
+	if (dram_offset < sizeof(code)) {
+		int len;
+		printf("write sector content\n");
+
+		len = sizeof(code) - dram_offset < DRAM_BLK_SIZE ? sizeof(code) - dram_offset : DRAM_BLK_SIZE;
+		if (sector == 0x20f0 + 0x10)
+			len = 6336;
+		memset(buf, 0, RKFT_BLOCKSIZE);
+		memcpy(buf, code+dram_offset, len);
+		dram_offset += len;
+		libusb_fill_bulk_transfer(xfr, xfr->dev_handle, 0x02, buf, len, cmd_cb, NULL, 60*1000);
+		libusb_submit_transfer(xfr);
+	}
+}
 
 static void LIBUSB_CALL res_cb(struct libusb_transfer *xfr)
 {
@@ -177,17 +165,28 @@ static void LIBUSB_CALL res_cb(struct libusb_transfer *xfr)
 		exit(3);
 	}
 
-	sector++;
-	if (sector == 0x06) {
-		printf("start step 4, load dram firmware.\n");
+	if (load_state == 3) {
+		sector++;
+		if (sector == 0x07) {
+			printf("start step 4, load dram firmware.\n");
+			load_state = 4;
 
-		load_state = 4;
-		exit(0);
-	} else {
-		prepare_cmd(RKFT_CMD_ERASESECTORS, sector, 0x01);
+			sector = 0x2000;
+			dram_offset = 0;
+			prepare_cmd(RKFT_CMD_WRITESECTOR, sector, 0x10);
 
-		libusb_fill_bulk_transfer(xfr, xfr->dev_handle, 0x02, cmd, 31, cmd_cb, NULL, 60*1000);
-		libusb_submit_transfer(xfr);
+			printf("write sector cmd\n");
+
+			libusb_fill_bulk_transfer(xfr, xfr->dev_handle, 0x02, cmd, 31, dram_cb, NULL, 60*1000);
+			libusb_submit_transfer(xfr);
+		} else {
+			prepare_cmd(RKFT_CMD_ERASESECTORS, sector, 0x01);
+
+			libusb_fill_bulk_transfer(xfr, xfr->dev_handle, 0x02, cmd, 31, cmd_cb, NULL, 60*1000);
+			libusb_submit_transfer(xfr);
+		}
+	} else if (load_state == 4) {
+		printf("i don't knonw\n");
 	}
 }
 
@@ -206,7 +205,7 @@ static void LIBUSB_CALL test_device_cb(struct libusb_transfer *xfr)
 	sector = 0x02;
 	prepare_cmd(RKFT_CMD_ERASESECTORS, sector, 0x01);
 
-	libusb_fill_bulk_transfer(xfr, xfr->dev_handle, 0x02, cmd, 31, res_cb, NULL, 60*1000);
+	libusb_fill_bulk_transfer(xfr, xfr->dev_handle, 0x02, cmd, 31, cmd_cb, NULL, 60*1000);
 	libusb_submit_transfer(xfr);
 }
 
@@ -218,8 +217,12 @@ static void LIBUSB_CALL cmd_cb(struct libusb_transfer *xfr)
 		exit(3);
 	}
 
-	/* read 13 bytes return value */
-	libusb_fill_bulk_transfer(xfr, xfr->dev_handle, 0x81, cmd, 13, res_cb, NULL, 60*1000);
+	if (load_state == 3) {
+		libusb_fill_bulk_transfer(xfr, xfr->dev_handle, 0x81, cmd, 13, res_cb, NULL, 60*1000);
+	} else if (load_state == 4) {
+		printf("read sector reponse\n");
+		libusb_fill_bulk_transfer(xfr, xfr->dev_handle, 0x81, cmd, 13, dram_cmd_cb, NULL, 60*1000);
+	}
 	libusb_submit_transfer(xfr);
 }
 
@@ -268,54 +271,11 @@ static void LIBUSB_CALL ddr_xfr_cb(struct libusb_transfer *xfr)
 	} else if (load_state == 1) {
 		len = read(usb_fd, buf + LIBUSB_CONTROL_SETUP_SIZE, BLK_SIZE);
 		if (len < 0) {
-			fprintf(stderr, "read ddr image failed\n");
+			fprintf(stderr, "read usb image failed\n");
 			exit(-1);
 		}
 
-		if (len == 0) {
-			int cfg;
-			char data[18];
-			int status;
-
-#if 1
-			printf("close old device\n");
-			libusb_release_interface(xfr->dev_handle, 0);
-			libusb_close(xfr->dev_handle);
-			libusb_exit(NULL);
-
-			libusb_init(NULL);
-
-			/* try to pick up missing parameters from known devices */
-			xfr->dev_handle = libusb_open_device_with_vid_pid(NULL, VENDOR, PRODUCT);
-			if (xfr->dev_handle == NULL) {
-				fprintf(stderr, "libusb_open() failed\n");
-				exit(-1);
-			}
-
-			/* We need to claim the first interface */
-			libusb_set_auto_detach_kernel_driver(xfr->dev_handle, 1);
-			status = libusb_claim_interface(xfr->dev_handle, 0);
-			if (status != LIBUSB_SUCCESS) {
-				fprintf(stderr, "libusb_claim_interface failed: %s\n", libusb_error_name(status));
-				exit(-1);
-			}
-#endif
-			usleep(1000 * 1000);
-			libusb_get_descriptor(xfr->dev_handle, 0x01, 0, data, 18);
-			libusb_get_configuration(xfr->dev_handle, &cfg);
-			if (cfg != 1) {
-				fprintf(stderr, "set config\n");
-				libusb_set_configuration(xfr->dev_handle, 1);
-			}
-
-			usleep(1000 * 1000);
-			printf("start step 3, test device.\n");
-			load_state = 2;
-
-			prepare_cmd(RKFT_CMD_TESTUNITREADY, 0, 0);
-			libusb_fill_bulk_transfer(xfr, xfr->dev_handle, 0x02, cmd, 31, test_device_cb, NULL, 60*1000);
-			libusb_submit_transfer(xfr);
-		} else {
+		if (len > 0) {
 			crc16 = rkcrc16(crc16, buf + LIBUSB_CONTROL_SETUP_SIZE, len);
 
 			if (len != 4096) {
@@ -330,26 +290,14 @@ static void LIBUSB_CALL ddr_xfr_cb(struct libusb_transfer *xfr)
 }
 
 
-void *handle_event_func()
-{
-	while (!do_exit) {
-		int rc;
-		rc = libusb_handle_events(NULL);
-		if (rc != LIBUSB_SUCCESS)
-			break;
-	}
-
-	return NULL;
-}
-
 int main(int argc, char **argv)
 {
 	int status;
 	libusb_device_handle *device = NULL;
-	struct libusb_transfer *xfr;
-	pthread_t tid;
 	int opt, len;
 	char *ddr_file, *usb_file;
+	libusb_hotplug_callback_handle handle;
+	int rc;
 
 	ddr_file = usb_file = NULL;
 	while ((opt = getopt(argc, argv, "d:u:")) != -1) {
@@ -390,12 +338,90 @@ int main(int argc, char **argv)
 	}
 	libusb_set_debug(NULL, 3);
 
-	/* try to pick up missing parameters from known devices */
-	device = libusb_open_device_with_vid_pid(NULL, VENDOR, PRODUCT);
-	if (device == NULL) {
-		fprintf(stderr, "libusb_open() failed\n");
-		goto err;
+	stage = 0;
+	rc = libusb_hotplug_register_callback(NULL, LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED |
+			LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT, 0, VENDOR, PRODUCT,
+			LIBUSB_HOTPLUG_MATCH_ANY, hotplug_callback, NULL,
+			&handle);
+	if (LIBUSB_SUCCESS != rc) {
+		printf("Error creating a hotplug callback\n");
+		libusb_exit(NULL);
+		return EXIT_FAILURE;
 	}
+
+	while (!do_exit) {
+		int rc;
+		rc = libusb_handle_events(NULL);
+		if (rc != LIBUSB_SUCCESS)
+			break;
+	}
+
+	/*
+	while (1) {
+		libusb_handle_events_completed(NULL, NULL);
+		usleep(10000);
+	}
+	*/
+
+	libusb_hotplug_deregister_callback(NULL, handle);
+	libusb_exit(NULL);
+	return 0;
+}
+
+int hotplug_callback(struct libusb_context *ctx, struct libusb_device *dev,
+		libusb_hotplug_event event, void *user_data)
+{
+	static libusb_device_handle *handle = NULL;
+	struct libusb_device_descriptor desc;
+	int rc;
+
+	libusb_get_device_descriptor(dev, &desc);
+
+	if (LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED == event) {
+		printf("arrived\n");
+		if (stage == 0) {
+			printf("stage1\n");
+			rc = stage1(&handle, dev);
+			stage++;
+		} else {
+			printf("stage2\n");
+			rc = stage2(&handle, dev);
+		}
+		/*
+		rc = libusb_open(dev, &handle);
+		if (LIBUSB_SUCCESS != rc) {
+			printf("Could not open USB device\n");
+		}
+		*/
+	} else if (LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT == event) {
+		printf("left\n");
+		if (handle) {
+			libusb_close(handle);
+			handle = NULL;
+		}
+	} else {
+		printf("Unhandled event %d\n", event);
+	}
+
+	return 0;
+}
+
+
+int stage1(struct libusb_device_handle **handle, struct libusb_device *dev)
+{
+	struct libusb_transfer *xfr;
+	libusb_device_handle *device = NULL;
+	int status, len;
+	int rc;
+
+	/* try to pick up missing parameters from known devices */
+	rc = libusb_open(dev, handle);
+	if (LIBUSB_SUCCESS != rc) {
+		printf("Could not open USB device\n");
+		return -1;
+	}
+	
+	device = *handle;
 
 	/* We need to claim the first interface */
 	libusb_set_auto_detach_kernel_driver(device, 1);
@@ -404,10 +430,6 @@ int main(int argc, char **argv)
 		fprintf(stderr, "libusb_claim_interface failed: %s\n", libusb_error_name(status));
 		goto err;
 	}
-
-	status = pthread_create(&tid, NULL, handle_event_func, NULL);
-	if (status < 0)
-		goto err;
 
 	/* step 1, load ddr image */
 	xfr = libusb_alloc_transfer(0);
@@ -423,13 +445,43 @@ int main(int argc, char **argv)
 	libusb_fill_control_transfer(xfr, device, buf, ddr_xfr_cb, NULL, 60 * 1000);
 	libusb_submit_transfer(xfr);
 
-	pthread_join(tid, NULL);
-
-	libusb_release_interface(device, 0);
-	libusb_close(device);
-	libusb_exit(NULL);
-	return status;
 err:
-	libusb_exit(NULL);
-	return -1;
+	return 0;
+}
+
+int stage2(struct libusb_device_handle **handle, struct libusb_device *dev)
+{
+	struct libusb_transfer *xfr;
+	libusb_device_handle *device = NULL;
+	int status, len;
+	int rc;
+	int cfg;
+
+	/* try to pick up missing parameters from known devices */
+	rc = libusb_open(dev, handle);
+	if (LIBUSB_SUCCESS != rc) {
+		printf("Could not open USB device\n");
+		return -1;
+	}
+	
+	device = *handle;
+
+	/* We need to claim the first interface */
+	libusb_set_auto_detach_kernel_driver(device, 1);
+	status = libusb_claim_interface(device, 0);
+	if (status != LIBUSB_SUCCESS) {
+		fprintf(stderr, "libusb_claim_interface failed: %s\n", libusb_error_name(status));
+		goto err;
+	}
+
+	/* step 3, test device */
+	printf("start step 3, test device.\n");
+	xfr = libusb_alloc_transfer(0);
+
+	prepare_cmd(RKFT_CMD_TESTUNITREADY, 0, 0);
+	libusb_fill_bulk_transfer(xfr, device, 0x02, cmd, 31, test_device_cb, NULL, 60*1000);
+	libusb_submit_transfer(xfr);
+
+err:
+	return 0;
 }
