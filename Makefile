@@ -4,7 +4,7 @@ CC	= $(CROSSPREFIX)gcc
 LD	= $(CC)
 CFLAGS	= -O2 -g
 LDFLAGS	= 
-LIBS	= `pkg-config --cflags --libs libusb-1.0` -lpthread
+LIBS	= `pkg-config --cflags --libs libusb-1.0`
 
 ifdef LIBUSB
 CFLAGS	+= -I$(LIBUSB)/include
